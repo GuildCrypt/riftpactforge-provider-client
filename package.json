@@ -1,0 +1,32 @@
+{
+  "name": "oathforge-provider-client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --bail --timeout 60000"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GuildCrypt/oathforge-provider-client.git"
+  },
+  "author": "GuildCrypt",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GuildCrypt/oathforge-provider-client/issues"
+  },
+  "homepage": "https://github.com/GuildCrypt/oathforge-provider-client#readme",
+  "dependencies": {
+    "amorph": "^4.2.0",
+    "amorph-hex": "^3.0.1",
+    "lodash": "^4.17.11",
+    "oathforge": "^2.0.7",
+    "promise-waterfall": "^0.1.0",
+    "ultralightbeam": "^5.1.10"
+  },
+  "devDependencies": {
+    "amorph-ascii": "^1.0.0",
+    "mocha": "^5.2.0",
+    "web3-providers-http": "^1.0.0-beta.37"
+  }
+}
