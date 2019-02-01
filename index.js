@@ -7,6 +7,7 @@ const Amorph = require('amorph')
 const amorphNumber = require('amorph-number')
 const amorphHex = require('amorph-hex')
 const amorphAscii = require('amorph-ascii')
+const axios = require('axios')
 
 function getSimplePojoKey(key, converter) {
   switch(converter) {
@@ -50,6 +51,7 @@ class OathForgeState {
       const oathTokenSimplePojo = {}
       _.map(this.oathTokenConverters, (converter, key) => {
         oathTokenSimplePojo[getSimplePojoKey(key, converter)] = oathTokenPojo[key].to(converter)
+        oathTokenSimplePojo.uriData = oathTokenPojo.uriData
       })
       return oathTokenSimplePojo
     })
@@ -125,6 +127,14 @@ class OathForgeProviderClient {
       return this.oathForge.fetch('redemptionCodeHashSubmittedAt(uint256)', [tokenId])
     }).then((redemptionCodeHashSubmittedAt) => {
       pojo.redemptionCodeHashSubmittedAt = redemptionCodeHashSubmittedAt
+    }).then(() => {
+      return axios.get(pojo.uri.to(amorphAscii), {
+        timeout: 2000
+      }).then((response) => {
+        pojo.uriData = response.data
+      }, (err) => {
+        pojo.uriData = null
+      })
     }).then(() => {
       return pojo
     })
