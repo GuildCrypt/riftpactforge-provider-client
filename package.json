@@ -1,5 +1,5 @@
 {
-  "name": "oathforge-provider-client",
+  "name": "riftpactforge-provider-client",
   "version": "2.1.0",
   "description": "",
   "main": "index.js",
@@ -8,21 +8,22 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GuildCrypt/oathforge-provider-client.git"
+    "url": "git+https://github.com/GuildCrypt/riftpactforge-provider-client.git"
   },
   "author": "GuildCrypt",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/GuildCrypt/oathforge-provider-client/issues"
+    "url": "https://github.com/GuildCrypt/riftpactforge-provider-client/issues"
   },
-  "homepage": "https://github.com/GuildCrypt/oathforge-provider-client#readme",
+  "homepage": "https://github.com/GuildCrypt/riftpactforge-provider-client#readme",
   "dependencies": {
     "amorph": "^4.2.0",
     "amorph-hex": "^3.0.1",
     "axios": "^0.18.0",
     "lodash": "^4.17.11",
-    "oathforge": "^2.0.7",
     "promise-waterfall": "^0.1.0",
+    "riftpact": "^4.0.2",
+    "riftpactforge": "^2.0.2",
     "ultralightbeam": "^5.1.10"
   },
   "devDependencies": {

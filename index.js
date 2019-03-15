@@ -2,12 +2,13 @@ const waterfall = require('promise-waterfall')
 const _ = require('lodash')
 const Ultralightbeam = require('ultralightbeam')
 const SolWrapper = require('ultralightbeam/lib/SolWrapper')
-const oathForgeInfo = require('oathforge')
 const Amorph = require('amorph')
 const amorphNumber = require('amorph-number')
 const amorphHex = require('amorph-hex')
 const amorphAscii = require('amorph-ascii')
 const axios = require('axios')
+const riftpactforgeInfo = require('riftpactforge')
+const riftpactInfo = require('riftpact')
 
 function getSimplePojoKey(key, converter) {
   switch(converter) {
@@ -22,23 +23,24 @@ function getSimplePojoKey(key, converter) {
   }
 }
 
-class OathForgeState {
+class RiftpactState {
 
   constructor(pojo) {
     this.pojo = pojo
     this.converters = {
       address: amorphHex.unprefixed,
-      totalSupply: amorphNumber.unsigned,
-      nextTokenId: amorphNumber.unsigned
+      rftsCount: amorphNumber.unsigned,
     }
-    this.oathTokenConverters = {
+    this.riftpactConverters = {
       id: amorphNumber.unsigned,
-      uri: amorphAscii,
-      owner: amorphHex.unprefixed,
-      sunsetInitiatedAt: amorphNumber.unsigned,
-      sunsetLength: amorphNumber.unsigned,
-      redemptionCodeHash: amorphHex.unprefixed,
-      redemptionCodeHashSubmittedAt: amorphNumber.unsigned
+      parentToken: amorphHex.unprefixed,
+      parentTokenId: amorphNumber.unsigned,
+      totalSupply: amorphNumber.unsigned,
+      currencyAddress: amorphHex.unprefixed,
+      auctionAllowedAt: amorphNumber.unsigned,
+      minAuctionCompleteWait: amorphNumber.unsigned,
+      minAuctionCompleteWait: amorphNumber.unsigned,
+      minBidDeltaPermille: amorphNumber.unsigned
     }
   }
 
@@ -47,98 +49,66 @@ class OathForgeState {
     _.map(this.converters, (converter, key) => {
       simplePojo[getSimplePojoKey(key, converter)] = this.pojo[key].to(converter)
     })
-    simplePojo.oathTokens = this.pojo.oathTokens.map((oathTokenPojo) => {
-      const oathTokenSimplePojo = {}
-      _.map(this.oathTokenConverters, (converter, key) => {
-        oathTokenSimplePojo[getSimplePojoKey(key, converter)] = oathTokenPojo[key].to(converter)
-        oathTokenSimplePojo.uriData = oathTokenPojo.uriData
+    simplePojo.riftpacts = this.pojo.riftpacts.map((riftpactPojo) => {
+      const riftpactSimplePojo = {}
+      _.map(this.riftpactConverters, (converter, key) => {
+        riftpactSimplePojo[getSimplePojoKey(key, converter)] = riftpactPojo[key].to(converter)
+        riftpactSimplePojo.uriData = riftpactPojo.uriData
       })
-      return oathTokenSimplePojo
+      return riftpactSimplePojo
     })
     return simplePojo
   }
 }
 
-class OathForgeProviderClient {
+class RiftpactforgeProviderClient {
 
-  constructor(provider, oathForgeAddress) {
+  constructor(provider, riftpactforgeAddress) {
     this.provider = provider
-    this.oathForgeAddress = oathForgeAddress
+    this.riftpactforgeAddress = riftpactforgeAddress
     this.ultralightbeam = new Ultralightbeam(provider)
-    this.oathForge = new SolWrapper(this.ultralightbeam, oathForgeInfo.abi, oathForgeAddress)
+    this.riftpactforge = new SolWrapper(this.ultralightbeam, riftpactforgeInfo.abi, riftpactforgeAddress)
   }
 
-  fetchOathForgeState() {
-    return this.fetchOathForgePojo().then((pojo) => {
-      return new OathForgeState(pojo)
-    })
+  async fetchRiftpactforgeState() {
+    const pojo = await this.fetchRiftpactforgePojo()
+    return new RiftpactState(pojo)
   }
 
-  fetchOathForgePojo() {
+  async fetchRiftpactforgePojo() {
     const pojo = {
-      address: this.oathForgeAddress,
-      oathTokens: []
+      address: this.riftpactforgeAddress,
+      riftpacts: []
     }
 
-    return this.oathForge.fetch('totalSupply()', []).then((totalSupply) => {
-      pojo.totalSupply = totalSupply
-    }).then(() => {
-      return this.oathForge.fetch('nextTokenId()', [])
-    }).then((nextTokenId) => {
-      pojo.nextTokenId = nextTokenId
-    }).then(() => {
-      const nextTokenIdNumber = pojo.nextTokenId.to(amorphNumber.unsigned)
-      return waterfall(_.range(nextTokenIdNumber).map((tokenIdNumber) => {
-        return () => {
-          const tokenId = Amorph.from(amorphNumber.unsigned, tokenIdNumber)
-          return this.fetchOathTokenPojo(tokenId).then((oathTokenPojo) => {
-            pojo.oathTokens.push(oathTokenPojo)
-          })
-        }
-      })).then(() => {
-        return pojo
-      })
-    })
+    pojo.rftsCount = await this.riftpactforge.fetch('rftsCount()', [])
+    const rftsCountNumber = pojo.rftsCount.to(amorphNumber.unsigned)
+    for (let idNumber = 0; idNumber < rftsCountNumber; idNumber++) {
+      const id = Amorph.from(amorphNumber.unsigned, idNumber)
+      const riftpactPojo = await this.fetchRiftpactPojo(id)
+      pojo.riftpacts.push(riftpactPojo)
+    }
+    return pojo
   }
 
-  fetchOathTokenPojo(tokenId) {
+  async fetchRiftpactPojo(id) {
     const pojo = {
-      id: tokenId
+      id: id
     }
-    return this.oathForge.fetch('ownerOf(uint256)', [tokenId]).then((owner) => {
-      pojo.owner = owner
-    }).then(() => {
-      return this.oathForge.fetch('tokenURI(uint256)', [tokenId])
-    }).then((uri) => {
-      pojo.uri = uri
-    }).then(() => {
-      return this.oathForge.fetch('sunsetInitiatedAt(uint256)', [tokenId])
-    }).then((sunsetInitiatedAt) => {
-      pojo.sunsetInitiatedAt = sunsetInitiatedAt
-    }).then(() => {
-      return this.oathForge.fetch('sunsetLength(uint256)', [tokenId])
-    }).then((sunsetLength) => {
-      pojo.sunsetLength = sunsetLength
-    }).then(() => {
-      return this.oathForge.fetch('redemptionCodeHash(uint256)', [tokenId])
-    }).then((redemptionCodeHash) => {
-      pojo.redemptionCodeHash = redemptionCodeHash
-    }).then(() => {
-      return this.oathForge.fetch('redemptionCodeHashSubmittedAt(uint256)', [tokenId])
-    }).then((redemptionCodeHashSubmittedAt) => {
-      pojo.redemptionCodeHashSubmittedAt = redemptionCodeHashSubmittedAt
-    }).then(() => {
-      return axios.get(pojo.uri.to(amorphAscii), {
-        timeout: 2000
-      }).then((response) => {
-        pojo.uriData = response.data
-      }, (err) => {
-        pojo.uriData = null
-      })
-    }).then(() => {
-      return pojo
-    })
+    pojo.address = await this.riftpactforge.fetch('rfts(uint256)', [id])
+
+    const riftpact = new SolWrapper(this.ultralightbeam, riftpactInfo.abi, pojo.address)
+
+    pojo.parentToken = await riftpact.fetch('parentToken()', [])
+    pojo.parentTokenId = await riftpact.fetch('parentTokenId()', [])
+    pojo.totalSupply = await riftpact.fetch('totalSupply()', [])
+    pojo.currencyAddress = await riftpact.fetch('currencyAddress()', [])
+    pojo.auctionAllowedAt = await riftpact.fetch('auctionAllowedAt()', [])
+    pojo.minAuctionCompleteWait = await riftpact.fetch('minAuctionCompleteWait()', [])
+    pojo.minBidDeltaPermille = await riftpact.fetch('minBidDeltaPermille()', [])
+
+    return pojo
   }
 }
 
-module.exports = OathForgeProviderClient
+module.exports = RiftpactforgeProviderClient
