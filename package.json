@@ -24,7 +24,7 @@
     "promise-waterfall": "^0.1.0",
     "riftpact": "^4.0.2",
     "riftpactforge": "^2.0.2",
-    "ultralightbeam": "^5.1.10"
+    "ultralightbeam": "^5.1.12"
   },
   "devDependencies": {
     "amorph-ascii": "^1.0.0",
