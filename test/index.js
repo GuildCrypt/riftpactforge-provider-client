@@ -9,7 +9,7 @@ provider.sendAsync = provider.send
 describe('riftpactforge-provider-client', () => {
   let riftpactforgeProviderClient
   it('should instatitate', () => {
-    const riftpactforgeAddress = Amorph.from(amorphHex.unprefixed, '4b7fbe965081f1f5626e2662f2bbb352969ed14e')
+    const riftpactforgeAddress = Amorph.from(amorphHex.unprefixed, 'd7b4a7d2bb0ffa29a7d2f17cd6b7e176c48060a6')
     riftpactforgeProviderClient = new RiftpactforgeProviderClient(provider, riftpactforgeAddress)
   })
   it('should get state', () => {

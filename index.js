@@ -33,6 +33,7 @@ class RiftpactState {
     }
     this.riftpactConverters = {
       id: amorphNumber.unsigned,
+      address: amorphHex.unprefixed,
       parentToken: amorphHex.unprefixed,
       parentTokenId: amorphNumber.unsigned,
       totalSupply: amorphNumber.unsigned,
